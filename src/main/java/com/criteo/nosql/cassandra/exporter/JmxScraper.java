@@ -17,7 +17,15 @@ import javax.management.remote.JMXServiceURL;
 import javax.management.remote.rmi.RMIConnectorServer;
 import javax.naming.Context;
 import javax.rmi.ssl.SslRMIClientSocketFactory;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -297,9 +305,15 @@ public class JmxScraper {
             if (e instanceof RuntimeMBeanException && e.getCause() != null && e.getCause() instanceof UnsupportedOperationException) {
                 return;
             }
-            logger.error("Cannot get value for {} {}", mBeanInfo.metricName, mBeanInfo.attribute.getName(), e);
+            logger.info("Cannot get value for {} {}", mBeanInfo.mBeanName, mBeanInfo.metricName);
+            logger.debug("Stack-trace for {} {}", mBeanInfo, nodeInfo, e);
+            return;
         }
         if (value == null) {
+            return;
+        }
+        if (mBeanInfo.attribute.getType() == null) {
+            logger.info("Attribute type of {}/{} is null. Skipping this metric...", mBeanInfo.mBeanName, mBeanInfo.attribute.getName());
             return;
         }
 
@@ -399,6 +413,7 @@ public class JmxScraper {
      * POJO to hold information regarding a metric
      */
     private static class MBeanInfo {
+
         final String metricName;
         final ObjectName mBeanName;
         final MBeanAttributeInfo attribute;
@@ -407,6 +422,15 @@ public class JmxScraper {
             this.metricName = name;
             this.attribute = attribute;
             this.mBeanName = mBeanName;
+        }
+
+        @Override
+        public String toString() {
+            return "MBeanInfo{" +
+                    "metricName='" + metricName + '\'' +
+                    ", mBeanName=" + mBeanName +
+                    ", attribute=" + attribute +
+                    '}';
         }
     }
 
@@ -460,6 +484,16 @@ public class JmxScraper {
             }
 
             return Optional.of(new NodeInfo(clusterName, datacenterName, keyspaces, tables));
+        }
+
+        @Override
+        public String toString() {
+            return "NodeInfo{" +
+                    "clusterName='" + clusterName + '\'' +
+                    ", datacenterName='" + datacenterName + '\'' +
+                    ", keyspaces=" + keyspaces +
+                    ", tables=" + tables +
+                    '}';
         }
     }
 }
